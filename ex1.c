@@ -17,7 +17,8 @@ main(int argc, char **argv)
   // the value of x by 1 using in-line assembly
   //
 
-  asm ("inc %0"
+  asm ("incl %0\t\n"
+       "movl %0, %1"
       : "=r" (x)
       : "0" (x));
 
