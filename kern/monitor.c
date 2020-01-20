@@ -103,13 +103,14 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		debuginfo_rip((uintptr_t) rip, &info);
 
 		cprintf("       %s:%d: %s+%016x  args:%d",
-			info.rip_file, info.rip_line, info.rip_fn_name, info.rip_fn_addr, info.rip_fn_narg);
+			info.rip_file, info.rip_line, info.rip_fn_name, rip - info.rip_fn_addr, info.rip_fn_narg);
 
 		for (int i = 1; i <= info.rip_fn_narg; ++ i) {
 			cprintf("  %016x", rbp[-1] >> 32);
 		}
 
     cprintf("\n");
+		cprintf("%016x\n", rbp + (uint64_t) info.offset_fn_arg[0]);
 		/*
 		cprintf("CFA: reg %s off %d\n",
 			names_of_regs[info.reg_table.cfa_rule.dw_regnum],
