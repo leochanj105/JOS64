@@ -15,6 +15,28 @@
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
+static const char *const names_of_regs[] =
+{
+	"rax", "rdx", "rcx", "rbx",
+	"rsi", "rdi", "rbp", "rsp",
+	"r8",  "r9",  "r10", "r11",
+	"r12", "r13", "r14", "r15",
+	"rip",
+	"xmm0",  "xmm1",  "xmm2",  "xmm3",
+	"xmm4",  "xmm5",  "xmm6",  "xmm7",
+	"xmm8",  "xmm9",  "xmm10", "xmm11",
+	"xmm12", "xmm13", "xmm14", "xmm15",
+	"st0", "st1", "st2", "st3",
+	"st4", "st5", "st6", "st7",
+	"mm0", "mm1", "mm2", "mm3",
+	"mm4", "mm5", "mm6", "mm7",
+	"rflags",
+	"es", "cs", "ss", "ds", "fs", "gs", NULL, NULL,
+	"fs.base", "gs.base", NULL, NULL,
+	"tr", "ldtr",
+	/* "mxcsr", "fcw", "fsw" */
+};
+
 
 struct Command {
 	const char *name;
@@ -58,6 +80,12 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+/*
+uint64_t read_rdi_from_info(struct Ripdebuginfo info) {
+	return info.reg_table.rules[5].dw_regnum;
+}
+*/
+
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
@@ -77,11 +105,16 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		cprintf("       %s:%d: %s+%016x  args:%d",
 			info.rip_file, info.rip_line, info.rip_fn_name, info.rip_fn_addr, info.rip_fn_narg);
 
-		for (int i = 0; i < info.rip_fn_narg; ++ i) {
-			cprintf("  %016x", *((uint64_t*)rbp + info.offset_fn_arg[i]));
+		for (int i = 1; i <= info.rip_fn_narg; ++ i) {
+			cprintf("  %016x", rbp[-1] >> 32);
 		}
 
     cprintf("\n");
+		/*
+		cprintf("CFA: reg %s off %d\n",
+			names_of_regs[info.reg_table.cfa_rule.dw_regnum],
+			info.reg_table.cfa_rule.dw_offset);
+		*/
 
 		rip = rbp[1];
 		rbp = (uint64_t *) *rbp;
