@@ -15,6 +15,16 @@
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
+#define BLACK "\x1b[30m"
+#define RED "\x1b[31m"
+#define GREEN "\x1b[32m"
+#define YELLOW "\x1b[33m"
+#define BLUE "\x1b[34m"
+#define MAGNETA "\x1b[35m"
+#define CYAN "\x1b[36m"
+#define WHITE "\x1b[37m"
+#define RESET "\x1b[0m"
+
 static const char *const names_of_regs[] =
 {
 	"rax", "rdx", "rcx", "rbx",
@@ -110,7 +120,7 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		}
 
     cprintf("\n");
-		cprintf("%016x\n", rbp + (uint64_t) info.offset_fn_arg[0]);
+		//cprintf("%016x\n", info.offset_fn_arg[0]);
 		/*
 		cprintf("CFA: reg %s off %d\n",
 			names_of_regs[info.reg_table.cfa_rule.dw_regnum],
@@ -177,6 +187,7 @@ monitor(struct Trapframe *tf)
 	cprintf("Welcome to the JOS kernel monitor!\n");
 	cprintf("Type 'help' for a list of commands.\n");
 
+	cprintf(RED "Print RED and then RESET.\n" RESET);
 
 	while (1) {
 		buf = readline("K> ");
