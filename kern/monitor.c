@@ -130,11 +130,6 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
     cprintf("\n");
 /*
 		for (int i = 0; i < info.rip_fn_narg; ++ i) {
-			cprintf("======%016x\n", info.offset_fn_arg[i]);
-		}
-		for (int i = 0; i < info.rip_fn_narg; ++ i)
-			cprintf("zzzzzz%016x\n", info.size_fn_arg[i]);
-		for (int i = 0; i < info.rip_fn_narg; ++ i) {
 			cprintf("  %016x", rbpc[info.reg_table.cfa_rule.dw_offset + info.offset_fn_arg[i]]);
 		}
 		cprintf("\nCFA: reg %s off %d\n",
