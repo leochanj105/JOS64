@@ -99,7 +99,7 @@ uint64_t read_rdi_from_info(struct Ripdebuginfo info) {
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	cprintf("mon_backtrace(%016x %016x %016x)\n", argc, argv, tf);
+	//cprintf("mon_backtrace(%016x %016x %016x)\n", argc, argv, tf);
 	// Your code here.
 	uint64_t rip, *rbp;
 	read_rip(rip);
@@ -152,7 +152,7 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 static int
 runcmd(char *buf, struct Trapframe *tf)
 {
-	cprintf("runcmd(%016x, %016x)\n", buf, tf);
+	//cprintf("runcmd(%016x, %016x)\n", buf, tf);
 	int argc;
 	char *argv[MAXARGS];
 	int i;
