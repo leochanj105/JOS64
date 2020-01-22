@@ -99,6 +99,7 @@ uint64_t read_rdi_from_info(struct Ripdebuginfo info) {
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
+	cprintf("mon_backtrace(%016x %016x %016x)\n", argc, argv, tf);
 	// Your code here.
 	uint64_t rip, *rbp;
 	read_rip(rip);
@@ -108,6 +109,7 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		cprintf("  rbp %016x  rip %016x\n", rbp, rip);
 
 		// print debuginfo_rip()
+		char* rbpc = (char*) rbp;
 
 		struct Ripdebuginfo info;
 		debuginfo_rip((uintptr_t) rip, &info);
@@ -115,18 +117,30 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		cprintf("       %s:%d: %s+%016x  args:%d",
 			info.rip_file, info.rip_line, info.rip_fn_name, rip - info.rip_fn_addr, info.rip_fn_narg);
 
-		for (int i = 1; i <= info.rip_fn_narg; ++ i) {
-			cprintf("  %016x", rbp[-1] >> 32);
+		for (int i = 0; i < info.rip_fn_narg; ++ i) {
+			char* arg_start = &rbpc[info.reg_table.cfa_rule.dw_offset + info.offset_fn_arg[i]];
+			if (info.size_fn_arg[i] == 8) {
+				cprintf("  %016x", *(uint64_t *) arg_start);
+			} else if (info.size_fn_arg[i] == 4) {
+				cprintf("  %016x", *(uint32_t *) arg_start);
+			}
+			else cprintf("  %016x", *arg_start);
 		}
 
     cprintf("\n");
-		//cprintf("%016x\n", info.offset_fn_arg[0]);
-		/*
-		cprintf("CFA: reg %s off %d\n",
+/*
+		for (int i = 0; i < info.rip_fn_narg; ++ i) {
+			cprintf("======%016x\n", info.offset_fn_arg[i]);
+		}
+		for (int i = 0; i < info.rip_fn_narg; ++ i)
+			cprintf("zzzzzz%016x\n", info.size_fn_arg[i]);
+		for (int i = 0; i < info.rip_fn_narg; ++ i) {
+			cprintf("  %016x", rbpc[info.reg_table.cfa_rule.dw_offset + info.offset_fn_arg[i]]);
+		}
+		cprintf("\nCFA: reg %s off %d\n",
 			names_of_regs[info.reg_table.cfa_rule.dw_regnum],
 			info.reg_table.cfa_rule.dw_offset);
-		*/
-
+*/
 		rip = rbp[1];
 		rbp = (uint64_t *) *rbp;
 	}
@@ -143,6 +157,7 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 static int
 runcmd(char *buf, struct Trapframe *tf)
 {
+	cprintf("runcmd(%016x, %016x)\n", buf, tf);
 	int argc;
 	char *argv[MAXARGS];
 	int i;
