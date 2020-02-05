@@ -6,7 +6,7 @@
 #include "dwarf_elf.h"
 #include "dwarf.h"
 
-#include <kern/pmap.h>
+#define PADDR(X) ((physaddr_t)X - KERNBASE)
 
 #define SECTSIZE	512
 #define OFFSET_CORRECT(x) (x - ROUNDDOWN(x, SECTSIZE))
