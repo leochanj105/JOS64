@@ -13,7 +13,9 @@
 extern uint64_t pml4phys;
 #define BOOT_PAGE_TABLE_START ((uint64_t) KADDR((uint64_t) &pml4phys))
 #define BOOT_PAGE_TABLE_END   ((uint64_t) KADDR((uint64_t) (&pml4phys) + 5*PGSIZE))
-
+#define PISIZE (sizeof(struct PageInfo))
+#define BOOT_PT_START_PAGE PADDR(BOOT_PAGE_TABLE_START) >> PGSHIFT
+#define BOOT_PT_END_PAGE PADDR(BOOT_PAGE_TABLE_END) >> PGSHIFT
 // These variables are set by i386_detect_memory()
 size_t npages;			// Amount of physical memory (in pages)
 static size_t npages_basemem;	// Amount of base memory (in pages)
@@ -216,8 +218,12 @@ boot_alloc(uint32_t n)
 	// to a multiple of PGSIZE.
 	//
 	// LAB 2: Your code here.
-
-	return NULL;
+	result = nextfree;
+	nextfree = ROUNDUP((char *)nextfree + n, PGSIZE);
+	if(nextfree > (char *)(KERNBASE + PGSIZE * npages)){
+		panic("not enough memory");
+	}
+	return result;
 }
 
 // Set up a four-level page table:
@@ -241,7 +247,7 @@ x64_vm_init(void)
 	//panic("i386_vm_init: This function is not finished\n");
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
-	panic("x64_vm_init: this function is not finished\n");
+	//panic("x64_vm_init: this function is not finished\n");
 	pml4e = boot_alloc(PGSIZE);
 	memset(pml4e, 0, PGSIZE);
 	boot_pml4e = pml4e;
@@ -253,7 +259,8 @@ x64_vm_init(void)
 	// each physical page, there is a corresponding struct PageInfo in this
 	// array.  'npages' is the number of physical pages in memory.
 	// Your code goes here:
-
+	pages = (struct PageInfo*) boot_alloc(PISIZE * npages);
+	memset(pages, 0, PISIZE * npages);
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
 	// up the list of free physical pages. Once we've done so, all further
@@ -343,7 +350,7 @@ page_init(void)
 	// NB: Remember to mark the memory used for initial boot page table i.e (va>=BOOT_PAGE_TABLE_START && va < BOOT_PAGE_TABLE_END) as in-use (not free)
 	size_t i;
 	struct PageInfo* last = NULL;
-	for (i = 0; i < npages; i++) {
+	for (i = 1; i < npages_basemem; i++) {
 		pages[i].pp_ref = 0;
 		pages[i].pp_link = NULL;
 		if(last)
@@ -351,6 +358,18 @@ page_init(void)
 		else
 			page_free_list = &pages[i];
 		last = &pages[i];
+	}
+	//size_t free_slot = PADDR(boot_alloc(0)) >> PGSIZE;
+	for(i = PADDR(boot_alloc(0)) >> PGSHIFT; i < npages; i++){
+		if(!(i>= BOOT_PT_START_PAGE && i < BOOT_PT_END_PAGE)){
+			pages[i].pp_ref = 0;
+			pages[i].pp_link = NULL;
+			if(last)
+				last->pp_link = &pages[i];
+			else
+				page_free_list = &pages[i];
+			last = &pages[i];
+		}
 	}
 }
 
@@ -370,7 +389,12 @@ struct PageInfo *
 page_alloc(int alloc_flags)
 {
 	// Fill this function in
-	return 0;
+	if(!page_free_list) return NULL;
+	struct PageInfo* to_alloc = page_free_list;
+	page_free_list = to_alloc->pp_link;
+	to_alloc->pp_link = NULL;
+	if(alloc_flags & ALLOC_ZERO) memset(page2kva(to_alloc), '\0', PGSIZE);
+	return to_alloc;
 }
 
 //
@@ -393,6 +417,9 @@ page_free(struct PageInfo *pp)
 	// Fill this function in
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
+	if(pp->pp_ref || pp->pp_link) panic("page_free fault");
+	pp->pp_link = page_free_list;
+	page_free_list = pp;
 }
 
 //
