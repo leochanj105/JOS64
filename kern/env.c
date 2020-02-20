@@ -120,7 +120,13 @@ env_init(void)
 {
 	// Set up envs array
 	// LAB 3: Your code here.
-
+	env_free_list = NULL;
+  for(struct Env* e = envs + NENV - 1; e >= envs; e--){
+		e->env_status = ENV_FREE;
+		e->env_id = 0;
+		e->env_link = env_free_list;
+		env_free_list = e;
+	}
 	// Per-CPU part of the initialization
 	env_init_percpu();
 }
@@ -186,7 +192,9 @@ env_setup_vm(struct Env *e)
 	//    - The functions in kern/pmap.h are handy.
 
 	// LAB 3: Your code here.
-
+	e->env_pml4e = page2kva(p);
+	p->pp_ref++;
+	memcpy(e->env_pml4e, boot_pml4e, PGSIZE);
 	// UVPT maps the env's own page table read-only.
 	// Permissions: kernel R, user R
 	e->env_pml4e[PML4(UVPT)] = e->env_cr3 | PTE_P | PTE_U;
@@ -275,6 +283,14 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
+	struct PageInfo *page;
+	int err;
+	for(void *addr = ROUNDDOWN(va, PGSIZE); addr < ROUNDUP(va + len, PGSIZE); addr += PGSIZE){
+		if(!(page = page_alloc(0)))
+			panic("region_alloc failed:%e\n", -E_NO_MEM);
+		if((err = page_insert(e->env_pml4e, page, addr, PTE_U | PTE_W)))
+			panic("page_insert_failed:%e\n", err);
+	}
 }
 
 //
@@ -331,11 +347,23 @@ load_icode(struct Env *e, uint8_t *binary)
 	//  What?  (See env_run() and env_pop_tf() below.)
 
 	// LAB 3: Your code here
+  struct Elf* ELFHDR = (struct Elf*) binary;
+	if(!(ELFHDR->e_magic == ELF_MAGIC))
+		panic("not a valid ELF format\n");
+	lcr3(PADDR(e->env_pml4e));
+	for(struct Proghdr *ph = (struct Proghdr*) ((uint8_t*)ELFHDR + ELFHDR->e_phoff); ph < ph + ELFHDR->e_phnum;ph++){
+		if(ph->p_type == ELF_PROG_LOAD){
+			region_alloc(e, (void *)ph->p_va, ph->p_memsz);
+			memset((void*)ph->p_va, 0, ph->p_memsz);
+			memcpy((void*)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+		}
+	}
+	e->env_tf.tf_rip = ELFHDR->e_entry;
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
-
 	// LAB 3: Your code here.
 	e->elf = binary;
+	region_alloc(e, (void*)(USTACKTOP - PGSIZE), PGSIZE);
 }
 
 //

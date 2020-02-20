@@ -266,6 +266,8 @@ x64_vm_init(void)
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 3: Your code here.
+	envs = (struct Env*) boot_alloc(sizeof(struct Env*) * NENV);
+	memset(envs, 0, sizeof(struct Env*) * NENV);
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
 	// up the list of free physical pages. Once we've done so, all further
@@ -283,6 +285,7 @@ x64_vm_init(void)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
 
+	boot_map_region(boot_pml4e, UPAGES, PTSIZE, PADDR(pages), PTE_U);
 	//////////////////////////////////////////////////////////////////////
 	// Map the 'envs' array read-only by the user at linear address UENVS
 	// (ie. perm = PTE_U | PTE_P).
@@ -290,8 +293,7 @@ x64_vm_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
-
-	boot_map_region(boot_pml4e, UPAGES, npages * PISIZE, PADDR(pages), PTE_U);
+	boot_map_region(boot_pml4e, UENVS, PTSIZE, PADDR(envs), PTE_U);
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
 	// stack.  The kernel stack grows down from virtual address KSTACKTOP.
@@ -559,7 +561,7 @@ boot_map_region(pml4e_t *pml4e, uintptr_t la, size_t size, physaddr_t pa, int pe
 	// Fill this function in
 	for(size_t i = 0; i < size; i += PGSIZE){
 		pte_t *pte = pml4e_walk(pml4e, (const void*) (i + la), 1);
-		if(!pte) panic("unable to allocate page for page tables");
+		if(!pte) panic("unable to bootmap");
 		*pte = (pa + i) | perm | PTE_P;
 	}
 }
