@@ -30,7 +30,14 @@ static struct PageInfo *page_free_list;	// Free list of physical pages
 // --------------------------------------------------------------
 // Detect machine's physical memory setup.
 // --------------------------------------------------------------
+void check_pc(){
+	int count = 0;
+	for(struct PageInfo* p = page_free_list;p != NULL; p = p->pp_link){
+		count++;
+	}
+	cprintf("page count is %d\n", count);
 
+}
 static int
 nvram_read(int r)
 {
@@ -274,7 +281,6 @@ x64_vm_init(void)
 	// memory management will go through the page_* functions. In
 	// particular, we can now map memory using boot_map_region or page_insert
 	page_init();
-
 	//////////////////////////////////////////////////////////////////////
 	// Now we set up virtual memory
 	//////////////////////////////////////////////////////////////////////
@@ -326,6 +332,8 @@ x64_vm_init(void)
 	pdpe_t *pdpe = KADDR(PTE_ADDR(pml4e[1]));
 	pde_t *pgdir = KADDR(PTE_ADDR(pdpe[0]));
 	lcr3(boot_cr3);
+	
+  //check_pc();
 }
 
 
@@ -369,6 +377,7 @@ page_init(void)
 	//for(i = 0; i < npages;i++){
 	//	page_initpp(&pages[i]);
 	//}
+	//int count = 0;
 	for (i = 1; i < npages_basemem; i++) {
 		page_initpp(&pages[i]);
 		if(last)
@@ -386,6 +395,7 @@ page_init(void)
 			else
 				page_free_list = &pages[i];
 			last = &pages[i];
+			//count++;
 		}
 	}
 }
@@ -407,6 +417,7 @@ page_alloc(int alloc_flags)
 {
 	// Fill this function in
 	if(!page_free_list) return NULL;
+	//check_pc();
 	struct PageInfo* to_alloc = page_free_list;
 	page_free_list = to_alloc->pp_link;
 	to_alloc->pp_link = NULL;
