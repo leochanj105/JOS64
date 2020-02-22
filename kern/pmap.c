@@ -705,8 +705,14 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
+	pte_t *pte = NULL;
+	for(void* addr = (void *) ROUNDDOWN(va, PGSIZE); addr < ROUNDUP(va + len, PGSIZE);addr += PGSIZE){
+		if(((size_t)addr >= ULIM) || !(page_lookup(env->env_pml4e, addr, &pte)) || !(*pte & perm)){
+			user_mem_check_addr = addr < va ? (size_t)va : (size_t)addr;
+			return -E_FAULT;
+		}
+	}
 	return 0;
-
 }
 
 //
