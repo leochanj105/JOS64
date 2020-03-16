@@ -21,6 +21,7 @@ extern uint64_t pml4phys;
 size_t npages;			// Amount of physical memory (in pages)
 static size_t npages_basemem;	// Amount of base memory (in pages)
 
+
 // These variables are set in x86_vm_init()
 pml4e_t *boot_pml4e;		// Kernel's initial page directory
 physaddr_t boot_cr3;		// Physical address of boot time page directory
@@ -291,7 +292,7 @@ x64_vm_init(void)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
 
-	boot_map_region(boot_pml4e, UPAGES, PTSIZE, PADDR(pages), PTE_U);
+	boot_map_region(boot_pml4e, UPAGES, npages * PISIZE, PADDR(pages), PTE_U);
 	//////////////////////////////////////////////////////////////////////
 	// Map the 'envs' array read-only by the user at linear address UENVS
 	// (ie. perm = PTE_U | PTE_P).
@@ -299,7 +300,7 @@ x64_vm_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
-	boot_map_region(boot_pml4e, UENVS, PTSIZE, PADDR(envs), PTE_U);
+	boot_map_region(boot_pml4e, UENVS, NENV * sizeof(struct Env), PADDR(envs), PTE_U);
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
 	// stack.  The kernel stack grows down from virtual address KSTACKTOP.
@@ -378,7 +379,7 @@ page_init(void)
 	//	page_initpp(&pages[i]);
 	//}
 	//int count = 0;
-	for (i = 1; i < npages_basemem; i++) {
+	for (i = 0; i < npages; i++) {
 		page_initpp(&pages[i]);
 		if(last)
 			last->pp_link = &pages[i];
@@ -386,8 +387,10 @@ page_init(void)
 			page_free_list = &pages[i];
 		last = &pages[i];
 	}
+	page_free_list = page_free_list->pp_link;
+	pages[(IOPHYSMEM	>> PGSHIFT) - 1].pp_link = &pages[PADDR(boot_alloc(0)) >> PGSHIFT];
 	//size_t free_slot = PADDR(boot_alloc(0)) >> PGSIZE;
-	for(i = PADDR(boot_alloc(0)) >> PGSHIFT; i < npages; i++){
+	/*for(i = PADDR(boot_alloc(0)) >> PGSHIFT; i < npages; i++){
 		if(!(i>= BOOT_PT_START_PAGE && i < BOOT_PT_END_PAGE)){
 			page_initpp(&pages[i]);
 			if(last)
@@ -397,7 +400,7 @@ page_init(void)
 			last = &pages[i];
 			//count++;
 		}
-	}
+	}*/
 }
 
 //
@@ -707,7 +710,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 	// LAB 3: Your code here.
 	pte_t *pte = NULL;
 	for(void* addr = (void *) ROUNDDOWN(va, PGSIZE); addr < ROUNDUP(va + len, PGSIZE);addr += PGSIZE){
-		if(((size_t)addr >= ULIM) || !(page_lookup(env->env_pml4e, addr, &pte)) || !(*pte & perm)){
+		if(((size_t)addr >= ULIM) || !(page_lookup(env->env_pml4e, addr, &pte))){
 			user_mem_check_addr = addr < va ? (size_t)va : (size_t)addr;
 			return -E_FAULT;
 		}

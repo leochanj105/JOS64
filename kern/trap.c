@@ -82,7 +82,7 @@ void TH_default();
 void
 trap_init(void)
 {
-	extern struct Segdesc gdt[];
+	//extern struct Segdesc gdt[];
 
 	for(int i = 0; i < 255; i++){
 		SETGATE(idt[i], 0, GD_KT, TH_default, 0);

@@ -13,7 +13,8 @@
 #include <kern/kdebug.h>
 #include <kern/dwarf_api.h>
 #include <kern/trap.h>
-
+#include <kern/pmap.h>
+#include <kern/env.h>
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
 #define BLACK "\x1b[30m"
@@ -60,6 +61,9 @@ static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
 	{ "backtrace", "Stack backtrace", mon_backtrace },
+	{ "showmm", "Show memory mappings", mon_showmm},
+	{ "setperm", "Set the permission bits of page table entries", mon_setperm},
+	{ "dumpm", "Dump the words of a memory range", mon_dumpm},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -144,7 +148,122 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 }
 
 
+int
+mon_showmm(int argc, char **argv, struct Trapframe *tf){
+	if(argc < 3){
+		cprintf("Usage: showmm [va_start] [va_end]\n");
+		return 1;
+	}
+	uintptr_t start = strtol(argv[1], 0, 16), end = strtol(argv[2], 0, 16);
+	pte_t* pte;
+	pml4e_t* pml4e;
+	if(curenv->env_status == ENV_RUNNING)
+		pml4e = curenv->env_pml4e;
+	else
+		pml4e = boot_pml4e;
+	cprintf("        VA                  PA            PTE_U   PTE_W   PTE_P\n");
+	for(uintptr_t va = ROUNDDOWN(start, PGSIZE); va < ROUNDUP(end + 1, PGSIZE); va += PGSIZE){
+		cprintf("0x%016x  ", va);
+		if(!page_lookup(pml4e, (void *)va, &pte)){
+			cprintf("        -               -       -       -\n");
+		} 
+		else{
+			cprintf("0x%016x      %d       %d       %d\n", PTE_ADDR(*pte), !!(*pte & PTE_U), !!(*pte & PTE_W), !!(*pte & PTE_P));
+		}
+	}
+	return 0;
+}
 
+
+int
+mon_setperm(int argc, char **argv, struct Trapframe *tf){
+	if(argc < 3){
+		cprintf("Usage: setperm [null|-u|-w|-p] va [all bits|one bit]\n");
+		cprintf("The 4th need three bits if you choose null for the 2nd parameter, and need only one if you choose the others.\n");
+	}
+	pml4e_t* pml4e;
+	if(curenv->env_status == ENV_RUNNING)
+		pml4e = curenv->env_pml4e;
+	else
+		pml4e = boot_pml4e;
+	uintptr_t va;
+	pte_t *pte;
+	if(argc == 3){
+		va = strtol(argv[1], NULL, 16);
+		int bits = strtol(argv[2], NULL, 2);
+		if(!page_lookup(pml4e, (void *)va, &pte)){
+			cprintf("Pte not existed!\n");
+			return 1;
+		}
+		*pte = ((*pte) & (~0x7)) | bits;
+	}
+	else if(argc == 4){
+		char* para = argv[1];
+		if(para[0] != '-'){
+			cprintf("Usage: setperm [null|-u|-w|-p] va [all bits|one bit]\n");
+			return 1;
+		}
+		va = strtol(argv[2], NULL, 16);
+		int bit = strtol(argv[3], NULL, 2);
+		if(!page_lookup(pml4e, (void *)va, &pte)){
+			cprintf("Pte not existed!\n");
+			return 1;
+		}	
+		if(para[1] == 'u'){
+			*pte = ((*pte) & (~PTE_U)) | (bit << 2);
+		} 
+		else if(para[1] == 'w'){
+			*pte = ((*pte) & (~PTE_W)) | (bit << 1);
+		}
+		else if(para[1] == 'p'){
+			*pte = ((*pte) & (~PTE_P)) | bit;
+		}
+		else{
+			cprintf("Usage: setperm [null|-u|-w|-p] va [all bits|one bit]\n");
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int
+mon_dumpm(int argc, char **argv, struct Trapframe *tf){
+	if(argc < 4){
+		cprintf("Usage: dumpmm [-v|-p] start end\n");
+		return 1;
+	}
+	char* para = argv[1];
+	if(para[0] != '-' || (para[1] != 'v' && para[1] != 'p')){
+		cprintf("Usage: dumpmm [-v|-p] start end\n");
+		return 1;
+	}
+	pml4e_t* pml4e;
+	if(curenv->env_status == ENV_RUNNING)
+		pml4e = curenv->env_pml4e;
+	else
+		pml4e = boot_pml4e;
+	uintptr_t offset = para[1] == 'v' ? 0 : KERNBASE;
+	uintptr_t start = ROUNDDOWN(strtol(argv[2], NULL, 16) + offset, 4), end = ROUNDDOWN(strtol(argv[3], NULL, 16) + offset - 1, 4);
+  int count = ((end - start) >> 2) + 1;
+	cprintf("Memory dump of [%s, %s), word aligned:", argv[2], argv[3]);
+//	for(uint32_t* p = start;p <= end; p++){
+	//	cprintf("%016x: %08x\n", (uintptr_t)p - offset, *p);
+	//}
+	pte_t * pte;
+	for(int i = 0; i < count; i++){
+		uint32_t* va = ((uint32_t*) start) + i;
+		if(i % 4 == 0)
+			cprintf("\n%016x", (uintptr_t)va - offset);
+		if(!page_lookup(pml4e, va, &pte)){
+			cprintf(" --------");
+		} 
+		else{
+			cprintf(" %08x", *va);
+		}
+	}
+	cprintf("\n");
+	return 0;
+}
 /***** Kernel monitor command interpreter *****/
 
 #define WHITESPACE "\t\r\n "
