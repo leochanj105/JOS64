@@ -64,11 +64,19 @@ static struct Command commands[] = {
 	{ "showmm", "Show memory mappings", mon_showmm},
 	{ "setperm", "Set the permission bits of page table entries", mon_setperm},
 	{ "dumpm", "Dump the words of a memory range", mon_dumpm},
+	{ "continue", "Continue from breakpoint", mon_continue},
+	{ "si", "Single step from the breakpoint", mon_si},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
 /***** Implementations of basic kernel monitor commands *****/
 
+pml4e_t* get_pml4e(){
+	if(curenv->env_status == ENV_RUNNING)
+		return curenv->env_pml4e;
+	else
+		return boot_pml4e;
+}
 int
 mon_help(int argc, char **argv, struct Trapframe *tf)
 {
@@ -156,11 +164,7 @@ mon_showmm(int argc, char **argv, struct Trapframe *tf){
 	}
 	uintptr_t start = strtol(argv[1], 0, 16), end = strtol(argv[2], 0, 16);
 	pte_t* pte;
-	pml4e_t* pml4e;
-	if(curenv->env_status == ENV_RUNNING)
-		pml4e = curenv->env_pml4e;
-	else
-		pml4e = boot_pml4e;
+	pml4e_t* pml4e = get_pml4e();
 	cprintf("        VA                  PA            PTE_U   PTE_W   PTE_P\n");
 	for(uintptr_t va = ROUNDDOWN(start, PGSIZE); va < ROUNDUP(end + 1, PGSIZE); va += PGSIZE){
 		cprintf("0x%016x  ", va);
@@ -181,11 +185,7 @@ mon_setperm(int argc, char **argv, struct Trapframe *tf){
 		cprintf("Usage: setperm [null|-u|-w|-p] va [all bits|one bit]\n");
 		cprintf("The 4th need three bits if you choose null for the 2nd parameter, and need only one if you choose the others.\n");
 	}
-	pml4e_t* pml4e;
-	if(curenv->env_status == ENV_RUNNING)
-		pml4e = curenv->env_pml4e;
-	else
-		pml4e = boot_pml4e;
+	pml4e_t* pml4e = get_pml4e();
 	uintptr_t va;
 	pte_t *pte;
 	if(argc == 3){
@@ -237,11 +237,7 @@ mon_dumpm(int argc, char **argv, struct Trapframe *tf){
 		cprintf("Usage: dumpmm [-v|-p] start end\n");
 		return 1;
 	}
-	pml4e_t* pml4e;
-	if(curenv->env_status == ENV_RUNNING)
-		pml4e = curenv->env_pml4e;
-	else
-		pml4e = boot_pml4e;
+	pml4e_t* pml4e = get_pml4e();
 	uintptr_t offset = para[1] == 'v' ? 0 : KERNBASE;
 	uintptr_t start = ROUNDDOWN(strtol(argv[2], NULL, 16) + offset, 4), end = ROUNDDOWN(strtol(argv[3], NULL, 16) + offset - 1, 4);
   int count = ((end - start) >> 2) + 1;
@@ -263,6 +259,33 @@ mon_dumpm(int argc, char **argv, struct Trapframe *tf){
 	}
 	cprintf("\n");
 	return 0;
+}
+
+
+int
+mon_continue(int argc, char **argv, struct Trapframe *tf){
+	if(!tf){
+		cprintf("No env running\n");
+		return 0;
+	} else{
+		tf->tf_eflags &= ~FL_TF;
+		env_run(curenv);
+		cprintf("Env unsucessfully exited\n");
+		return -1;
+	}
+}
+int
+mon_si(int argc, char **argv, struct Trapframe *tf){
+	if(!tf){
+		cprintf("No env running\n");
+		return 0;
+	} else{
+		tf->tf_eflags |= FL_TF;
+		cprintf("Step at 0x%016x: %016x\n", tf->tf_rip, *(uint64_t*)(tf->tf_rip));
+		env_run(curenv);
+		cprintf("Env unsucessfully exited\n");
+		return -1;
+	}
 }
 /***** Kernel monitor command interpreter *****/
 
@@ -317,7 +340,7 @@ monitor(struct Trapframe *tf)
 	cprintf("Welcome to the JOS kernel monitor!\n");
 	cprintf("Type 'help' for a list of commands.\n");
 
-	cprintf(RED "Print RED and then RESET.\n" RESET);
+	cprintf(RED "RED" GREEN"GREEN"YELLOW"YELLOW"BLUE"BLUE"MAGNETA"MAGNETA"CYAN"CYAN\n" RESET);
 	if (tf != NULL)
 		print_trapframe(tf);
 

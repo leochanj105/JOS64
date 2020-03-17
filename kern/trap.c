@@ -88,7 +88,7 @@ trap_init(void)
 		SETGATE(idt[i], 0, GD_KT, TH_default, 0);
 	}
 	SETGATE(idt[T_DIVIDE], 1, GD_KT, TH_divide, 0);
-	SETGATE(idt[T_DEBUG], 1, GD_KT, TH_debug, 0);
+	SETGATE(idt[T_DEBUG], 1, GD_KT, TH_debug, 3);
 	SETGATE(idt[T_NMI], 0, GD_KT, TH_nmi, 0);
 	SETGATE(idt[T_BRKPT], 1, GD_KT, TH_brkpt, 3);
 	SETGATE(idt[T_OFLOW], 1, GD_KT, TH_oflow, 0);
@@ -196,7 +196,7 @@ trap_dispatch(struct Trapframe *tf)
 		page_fault_handler(tf);
 		return;
 	} 
-	else if(tf->tf_trapno == T_BRKPT){
+	else if(tf->tf_trapno == T_BRKPT || tf->tf_trapno == T_DEBUG){
 		monitor(tf);
 		return;
 	}
