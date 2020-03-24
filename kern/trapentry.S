@@ -39,7 +39,7 @@
 	.type name, @function;						\
 	.align 2;							\
 	name:								\
-	pushq $0;							\
+  pushq $0;							\
 	pushq $(num);							\
 	jmp _alltraps
 
@@ -47,16 +47,46 @@
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
-   Find the PUSHA,POPA macros in kern/macro.h. Since amd64 doesn't support
+  Find the PUSHA,POPA macros in kern/macro.h. Since amd64 doesn't support
    pusha,popa so you will find these macros handy.
  */
 
-
-
+TRAPHANDLER_NOEC(TH_divide, T_DIVIDE)
+TRAPHANDLER_NOEC(TH_debug, T_DEBUG)
+TRAPHANDLER_NOEC(TH_nmi, T_NMI)
+TRAPHANDLER_NOEC(TH_brkpt, T_BRKPT)
+TRAPHANDLER_NOEC(TH_oflow, T_OFLOW)
+TRAPHANDLER_NOEC(TH_bound, T_BOUND)
+TRAPHANDLER_NOEC(TH_illop, T_ILLOP)
+TRAPHANDLER_NOEC(TH_device, T_DEVICE)
+TRAPHANDLER(TH_dblflt, T_DBLFLT)
+TRAPHANDLER(TH_tss, T_TSS)
+TRAPHANDLER(TH_segnp, T_SEGNP)
+TRAPHANDLER(TH_stack, T_STACK)
+TRAPHANDLER(TH_gpflt, T_GPFLT)
+TRAPHANDLER(TH_pgflt, T_PGFLT)
+TRAPHANDLER_NOEC(TH_fperr, T_FPERR)
+TRAPHANDLER(TH_align, T_ALIGN)
+TRAPHANDLER_NOEC(TH_mchk, T_MCHK)
+TRAPHANDLER_NOEC(TH_simderr, T_SIMDERR)
+TRAPHANDLER_NOEC(TH_syscall, T_SYSCALL)
+TRAPHANDLER_NOEC(TH_default, T_DEFAULT)
 /*
  * Lab 3: Your code here for _alltraps
  *
  * Hint: Be sure to review the x64 calling convention from lab1
  *       for how to pass a pointer to the trapframe.
  */
-
+_alltraps:
+subq $16, %rsp
+mov %ds, 8(%rsp)
+mov %es, 0(%rsp)
+PUSHA
+mov %rsp, %rdi
+push %r15
+xor %r15, %r15
+mov $(GD_KD), %r15
+mov %r15, %ds
+mov %r15, %es
+pop %r15
+call trap

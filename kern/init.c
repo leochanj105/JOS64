@@ -67,7 +67,6 @@ i386_init(void)
 
 
 
-
 #if defined(TEST)
 	// Don't touch -- used by grading script!
 	ENV_CREATE(TEST, ENV_TYPE_USER);
@@ -75,6 +74,11 @@ i386_init(void)
 	// Touch all you want.
 
 	ENV_CREATE(user_primes, ENV_TYPE_USER);
+/*
+=======
+	ENV_CREATE(user_divzero, ENV_TYPE_USER);
+	//ENV_CREATE(user_buggyhello, ENV_TYPE_USER);
+>>>>>>> lab3*/
 #endif // TEST*
 
 	// Schedule and run the first user environment!
