@@ -820,7 +820,7 @@ check_page_free_list(bool only_low_memory)
 	struct PageInfo *pp;
 	unsigned pdx_limit = only_low_memory ? 1 : NPDENTRIES;
 	uint64_t nfree_basemem = 0, nfree_extmem = 0;
-	void *first_free_page;
+	char *first_free_page;
 
 	if (!page_free_list)
 		panic("'page_free_list' is a null pointer!");
