@@ -77,6 +77,9 @@ i386_init(void)
 /*
 =======
 	ENV_CREATE(user_divzero, ENV_TYPE_USER);
+=======
+	ENV_CREATE(user_hello, ENV_TYPE_USER);
+>>>>>>> lab3
 	//ENV_CREATE(user_buggyhello, ENV_TYPE_USER);
 >>>>>>> lab3*/
 #endif // TEST*

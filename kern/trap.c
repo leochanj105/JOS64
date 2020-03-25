@@ -65,7 +65,7 @@ static const char *trapname(int trapno)
 		return "Hardware Interrupt";
 	return "(unknown trap)";
 }
-void TH_divide();
+/*void TH_divide();
 void TH_debug();
 void TH_nmi();
 void TH_brkpt();
@@ -85,18 +85,25 @@ void TH_mchk();
 void TH_simderr();
 void TH_syscall();
 void TH_default();
-
+*/
 void
 trap_init(void)
 {
-	//extern struct Segdesc gdt[];
-
-	for(int i = 0; i < 255; i++){
-		SETGATE(idt[i], 0, GD_KT, TH_default, 0);
+  extern struct Segdesc gdt[];
+	extern uint64_t handlers[];
+	extern void* sysenter_handler(void);
+	int i;
+	char dpl[] = {0, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	for(i = 0; i < 20; i++){
+		SETGATE(idt[i], 1, GD_KT, handlers[i], dpl[i]);
 	}
-	SETGATE(idt[T_DIVIDE], 1, GD_KT, TH_divide, 0);
+	for(; i < 256; i++){
+		SETGATE(idt[i], 0, GD_KT, handlers[21], 0);
+	}
+	SETGATE(idt[T_NMI], 0, GD_KT, handlers[2], 0);
+	/*
+	SETGATE(idt[T_DIVIDE], 1, GD_KT, vectors[0], 0);
 	SETGATE(idt[T_DEBUG], 1, GD_KT, TH_debug, 3);
-	SETGATE(idt[T_NMI], 0, GD_KT, TH_nmi, 0);
 	SETGATE(idt[T_BRKPT], 1, GD_KT, TH_brkpt, 3);
 	SETGATE(idt[T_OFLOW], 1, GD_KT, TH_oflow, 0);
 	SETGATE(idt[T_BOUND], 1, GD_KT, TH_bound, 0);
@@ -107,18 +114,22 @@ trap_init(void)
 	SETGATE(idt[T_SEGNP], 1, GD_KT, TH_segnp, 0);
 	SETGATE(idt[T_STACK], 1, GD_KT, TH_stack, 0);
 	SETGATE(idt[T_GPFLT], 1, GD_KT, TH_gpflt, 0);
-	SETGATE(idt[T_PGFLT], 1, GD_KT, TH_pgflt, 0);
+	SETGATE(idt[T_PGFLT], 1, GD_KT,vectors[14], 0);
 	SETGATE(idt[T_FPERR], 1, GD_KT, TH_fperr, 0);
 	SETGATE(idt[T_ALIGN], 1, GD_KT, TH_align, 0);
 	SETGATE(idt[T_MCHK], 1, GD_KT, TH_mchk, 0);
-	SETGATE(idt[T_SIMDERR], 1, GD_KT, TH_simderr, 0);
-	SETGATE(idt[T_SYSCALL], 0, GD_KT, TH_syscall, 3);
-	SETGATE(idt[T_DEFAULT], 0, GD_KT, TH_default, 0);
+	SETGATE(idt[T_SIMDERR], 1, GD_KT, TH_simderr, 0);*/
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, handlers[20], 3);
+	SETGATE(idt[T_DEFAULT], 0, GD_KT, handlers[21], 0);
 	// LAB 3: Your code here.
 	idt_pd.pd_lim = sizeof(idt)-1;
 	idt_pd.pd_base = (uint64_t)idt;
 	// Per-CPU setup
 	trap_init_percpu();
+	write_msr(0x174, GD_KT);
+	write_msr(0x175, ts.ts_esp0);
+	write_msr(0x176, (uint64_t) sysenter_handler);
+	//cprintf("%016x, %016x, %016x\n", read_msr(0x174), read_msr(0x175), read_msr(0x176));
 }
 
 // Initialize and load the per-CPU TSS and IDT
@@ -257,7 +268,11 @@ trap_dispatch(struct Trapframe *tf)
 		return;
 	}
 }
-
+/*int64_t 
+sys_dispatch(struct Trapframe *tf){
+	//print_trapframe(tf);
+  return syscall(tf->tf_regs.reg_rax, tf->tf_regs.reg_rdx, tf->tf_regs.reg_rcx, tf->tf_regs.reg_rbx, tf->tf_regs.reg_rdi, tf->tf_regs.reg_rsi);
+}*/
 void
 trap(struct Trapframe *tf)
 {

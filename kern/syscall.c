@@ -285,7 +285,14 @@ syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, 
 	// LAB 3: Your code here.
 
 	//panic("syscall not implemented");
+	/*uint64_t rdi, rsi, rdx;
+	asm volatile("mov %%rdi, %0":"=r"(rdi));
+	asm volatile("mov %%rsi, %0":"=r"(rsi));
+	asm volatile("mov %%rdx, %0":"=r"(rdx));
+	cprintf("rdi = %016x, sysno = %d\n", rdi, syscallno);*/
 	if(syscallno >= NSYSCALLS) return -E_INVAL;
+	/*cprintf("a1 = %016x, a2 = %d\n", a1, a2);
+	cprintf("rsi = %016x, rdx = %d\n", rsi, rdx);*/
 	switch (syscallno) {
 		case SYS_cputs:
 			sys_cputs((const char*) a1, a2);
@@ -300,4 +307,14 @@ syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, 
 		return -E_NO_SYS;
 	}
 }
-
+int64_t
+stub_sys(int num, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5){
+	//uint64_t rdi, rsi, rdx;
+	//asm volatile("mov %%rdi, %0":"=r"(rdi));
+	//asm volatile("mov %%rsi, %0":"=r"(rsi));
+	//asm volatile("mov %%rdx, %0":"=r"(rdx));
+	//cprintf("rdi = %016x, sysno = %d\n", rdi, num);
+	//cprintf("a1 = %016x, a2 = %d\n", a1, a2);
+	//cprintf("rsi = %016x, rdx = %d\n", rsi, rdx);
+	return 1;
+}

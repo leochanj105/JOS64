@@ -23,6 +23,9 @@
  * where NAME is the argument passed to TRAPHANDLER.
  */
 #define TRAPHANDLER(name, num)						\
+	.data;		\
+		.quad name;			\
+	.text;		\
 	.globl name;		/* define global symbol for 'name' */	\
 	.type name, @function;	/* symbol type is function */		\
 	.align 2;		/* align function definition */		\
@@ -35,6 +38,9 @@
  * format in either case.
  */
 #define TRAPHANDLER_NOEC(name, num)					\
+	.data;					\
+		.quad name;				\
+	.text;		\
 	.globl name;							\
 	.type name, @function;						\
 	.align 2;							\
@@ -43,40 +49,69 @@
 	pushq $(num);							\
 	jmp _alltraps
 
-.text
 
+.data
+	.globl handlers
+
+handlers:
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
   Find the PUSHA,POPA macros in kern/macro.h. Since amd64 doesn't support
    pusha,popa so you will find these macros handy.
  */
-
-TRAPHANDLER_NOEC(TH_divide, T_DIVIDE)
-TRAPHANDLER_NOEC(TH_debug, T_DEBUG)
-TRAPHANDLER_NOEC(TH_nmi, T_NMI)
-TRAPHANDLER_NOEC(TH_brkpt, T_BRKPT)
-TRAPHANDLER_NOEC(TH_oflow, T_OFLOW)
-TRAPHANDLER_NOEC(TH_bound, T_BOUND)
-TRAPHANDLER_NOEC(TH_illop, T_ILLOP)
-TRAPHANDLER_NOEC(TH_device, T_DEVICE)
-TRAPHANDLER(TH_dblflt, T_DBLFLT)
-TRAPHANDLER(TH_tss, T_TSS)
-TRAPHANDLER(TH_segnp, T_SEGNP)
-TRAPHANDLER(TH_stack, T_STACK)
-TRAPHANDLER(TH_gpflt, T_GPFLT)
-TRAPHANDLER(TH_pgflt, T_PGFLT)
-TRAPHANDLER_NOEC(TH_fperr, T_FPERR)
-TRAPHANDLER(TH_align, T_ALIGN)
-TRAPHANDLER_NOEC(TH_mchk, T_MCHK)
-TRAPHANDLER_NOEC(TH_simderr, T_SIMDERR)
-TRAPHANDLER_NOEC(TH_syscall, T_SYSCALL)
-TRAPHANDLER_NOEC(TH_default, T_DEFAULT)
+	TRAPHANDLER_NOEC(TH_divide, T_DIVIDE)
+	TRAPHANDLER_NOEC(TH_debug, T_DEBUG)
+	TRAPHANDLER_NOEC(TH_nmi, T_NMI)
+	TRAPHANDLER_NOEC(TH_brkpt, T_BRKPT)
+	TRAPHANDLER_NOEC(TH_oflow, T_OFLOW)
+	TRAPHANDLER_NOEC(TH_bound, T_BOUND)
+	TRAPHANDLER_NOEC(TH_illop, T_ILLOP)
+	TRAPHANDLER_NOEC(TH_device, T_DEVICE)
+	TRAPHANDLER(TH_dblflt, T_DBLFLT)
+	TRAPHANDLER_NOEC(TH_coproc, 9)
+	TRAPHANDLER(TH_tss, T_TSS)
+	TRAPHANDLER(TH_segnp, T_SEGNP)
+	TRAPHANDLER(TH_stack, T_STACK)
+	TRAPHANDLER(TH_gpflt, T_GPFLT)
+	TRAPHANDLER(TH_pgflt, T_PGFLT)
+	TRAPHANDLER_NOEC(TH_res, 15)
+	TRAPHANDLER_NOEC(TH_fperr, T_FPERR)
+	TRAPHANDLER(TH_align, T_ALIGN)
+	TRAPHANDLER_NOEC(TH_mchk, T_MCHK)
+	TRAPHANDLER_NOEC(TH_simderr, T_SIMDERR)
+	TRAPHANDLER_NOEC(TH_syscall, T_SYSCALL)
+	TRAPHANDLER_NOEC(TH_default, T_DEFAULT)
 /*
  * Lab 3: Your code here for _alltraps
  *
  * Hint: Be sure to review the x64 calling convention from lab1
  *       for how to pass a pointer to the trapframe.
  */
+
+.globl sysenter_handler
+.type sysenter_handler, @function
+.align 2
+sysenter_handler:
+	/*push $0x0
+	push %rdi
+	push %rbx
+	push %rcx
+	push %rdx
+	push %rax*/
+	//int $3
+  //PUSHA
+	push %r14
+	push %rbp
+	call syscall
+	pop %rbp
+	pop %r14
+	//int $3
+	//add $0x18, %rsp
+	mov %r14, %rdx
+	mov %rbp, %rcx
+	//int $3
+	sysexit
+
 _alltraps:
 subq $16, %rsp
 mov %ds, 8(%rsp)

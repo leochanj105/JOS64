@@ -228,7 +228,7 @@ mon_setperm(int argc, char **argv, struct Trapframe *tf){
 
 int
 mon_dumpm(int argc, char **argv, struct Trapframe *tf){
-	if(argc < 4){
+	if(argc < 3){
 		cprintf("Usage: dumpmm [-v|-p] start end\n");
 		return 1;
 	}
@@ -239,7 +239,7 @@ mon_dumpm(int argc, char **argv, struct Trapframe *tf){
 	}
 	pml4e_t* pml4e = get_pml4e();
 	uintptr_t offset = para[1] == 'v' ? 0 : KERNBASE;
-	uintptr_t start = ROUNDDOWN(strtol(argv[2], NULL, 16) + offset, 4), end = ROUNDDOWN(strtol(argv[3], NULL, 16) + offset - 1, 4);
+	uintptr_t start = ROUNDDOWN(strtol(argv[2], NULL, 16) + offset, 4), end = argc == 3 ? start + 1 : ROUNDDOWN(strtol(argv[3], NULL, 16) + offset - 1, 4);
   int count = ((end - start) >> 2) + 1;
 	cprintf("Memory dump of [%s, %s), word aligned:", argv[2], argv[3]);
 //	for(uint32_t* p = start;p <= end; p++){
@@ -248,7 +248,7 @@ mon_dumpm(int argc, char **argv, struct Trapframe *tf){
 	pte_t * pte;
 	for(int i = 0; i < count; i++){
 		uint32_t* va = ((uint32_t*) start) + i;
-		if(i % 4 == 0)
+		if(i % 8 == 0)
 			cprintf("\n%016x", (uintptr_t)va - offset);
 		if(!page_lookup(pml4e, va, &pte)){
 			cprintf(" --------");
