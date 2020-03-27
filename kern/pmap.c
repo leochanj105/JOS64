@@ -314,7 +314,7 @@ x64_vm_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
-	boot_map_region(boot_pml4e, KSTACKTOP - KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
+	//boot_map_region(boot_pml4e, KSTACKTOP - KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE. We have detected the number
 	// of physical pages to be npages.
@@ -365,7 +365,9 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
-
+	for(int i = 0; i < NCPU; i++){
+		boot_map_region(boot_pml4e, KSTACKTOP - (i + 1) * KSTKSIZE - i * KSTKGAP, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+	}
 }
 
 // --------------------------------------------------------------
@@ -422,6 +424,7 @@ page_init(void)
 		last = &pages[i];
 	}
 	page_free_list = page_free_list->pp_link;
+	pages[(MPENTRY_PADDR >> PGSHIFT) - 1].pp_link = &pages[(MPENTRY_PADDR >> PGSHIFT) + 1];
 	pages[(IOPHYSMEM	>> PGSHIFT) - 1].pp_link = &pages[PADDR(boot_alloc(0)) >> PGSHIFT];
 	//size_t free_slot = PADDR(boot_alloc(0)) >> PGSIZE;
 	/*for(i = PADDR(boot_alloc(0)) >> PGSHIFT; i < npages; i++){
@@ -751,7 +754,14 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	size_t size_alloc = ROUNDUP(size, PGSIZE);
+	uintptr_t low = base;
+	base += size_alloc;
+	if(base >= MMIOLIM) 
+		panic("Exceeding MMIOLIM\n");
+	boot_map_region(boot_pml4e, low, size_alloc, pa, PTE_W | PTE_PCD | PTE_PWT);
+	return (void *)low;
+	//panic("mmio_map_region not implemented");
 }
 
 static uintptr_t user_mem_check_addr;
@@ -780,7 +790,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 	// LAB 3: Your code here.
 	pte_t *pte = NULL;
 	for(void* addr = (void *) ROUNDDOWN(va, PGSIZE); addr < ROUNDUP(va + len, PGSIZE);addr += PGSIZE){
-		if(((size_t)addr >= ULIM) || !(page_lookup(env->env_pml4e, addr, &pte))){
+		if(((size_t)addr >= ULIM) || !(page_lookup(env->env_pml4e, addr, &pte)) || (*pte & perm) != perm){
 			user_mem_check_addr = addr < va ? (size_t)va : (size_t)addr;
 			return -E_FAULT;
 		}

@@ -343,7 +343,6 @@ monitor(struct Trapframe *tf)
 	cprintf(RED "RED" GREEN"GREEN"YELLOW"YELLOW"BLUE"BLUE"MAGNETA"MAGNETA"CYAN"CYAN\n" RESET);
 	if (tf != NULL)
 		print_trapframe(tf);
-
 	while (1) {
 		buf = readline("K> ");
 		if (buf != NULL)

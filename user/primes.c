@@ -43,6 +43,7 @@ umain(int argc, char **argv)
 	// fork the first prime process in the chain
 	if ((id = fork()) < 0)
 		panic("fork: %e", id);
+	//asm volatile("int $3");
 	if (id == 0)
 		primeproc();
 

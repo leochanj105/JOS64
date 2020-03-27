@@ -130,6 +130,14 @@ env_init(void)
 		e->env_link = env_free_list;
 		env_free_list = e;
 	}
+	//panic("???\n");
+	//asm volatile("int $3");
+	//int n = 0;
+	//for(struct Env *e = env_free_list; e; e = e->env_link){
+	//	cprintf("%016x ", e);
+	//	n++;
+	//	if(n == 10) {n = 0; cprintf("\n");}
+	//}
 	// Per-CPU part of the initialization
 	env_init_percpu();
 	//check_pc();
@@ -217,12 +225,19 @@ env_setup_vm(struct Env *e)
 //	-E_NO_MEM on memory exhaustion
 //
 int
+free_num(){
+	struct Env* e = env_free_list;
+	int n = 0;
+	for(;e;e=e->env_link) n++;
+	return n;
+}
+int
 env_alloc(struct Env **newenv_store, envid_t parent_id)
 {
 	int32_t generation;
 	int r;
 	struct Env *e;
-
+  cprintf("free = %016x\n", env_free_list);
 	if (!(e = env_free_list))
 		return -E_NO_FREE_ENV;
 
@@ -265,7 +280,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 
 	// Enable interrupts while in user mode.
 	// LAB 4: Your code here.
-
+	e->env_tf.tf_eflags |= FL_IF;
 	// Clear the page fault handler until user installs one.
 	e->env_pgfault_upcall = 0;
 
@@ -563,8 +578,11 @@ env_run(struct Env *e)
 	curenv = e;
 	curenv->env_status = ENV_RUNNING;
 	curenv->env_runs++;
+	unlock_kernel();
 	lcr3(curenv->env_cr3);
+	//unlock_kernel();
 	env_pop_tf(&(curenv->env_tf));
+	//unlock_kernel();
 	//panic("env_run not yet implemented");
 }
 
