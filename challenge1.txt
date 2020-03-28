@@ -1,7 +1,8 @@
 List challenge problems completed as part of the lab 1 handin, as well
 as the problem number.
 
-Challenge 1:
+
+Lab 1 Challenge 1 completed:
 In moniter.c, we defined at line 20-28 a group of macros of ANSI escape characters to print different colors.
 Also we printed different colors at line 343 with the following statement:
 cprintf(RED "RED" GREEN"GREEN"YELLOW"YELLOW"BLUE"BLUE"MAGNETA"MAGNETA"CYAN"CYAN\n" RESET);

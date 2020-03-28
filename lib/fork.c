@@ -26,10 +26,9 @@ pgfault(struct UTrapframe *utf)
 	// LAB 4: Your code here.
 	pte_t pte = uvpt[VPN(addr)];
 	envid_t pid = sys_getenvid();
-	int r;
+	void* va = ROUNDDOWN(addr, PGSIZE);
 	if((err & FEC_WR) && (pte & PTE_COW)){
-		if((r = sys_page_alloc(pid, (void*)PFTEMP, PTE_P | PTE_W | PTE_U)) == 0){
-			void* va = ROUNDDOWN(addr, PGSIZE);
+		if(!sys_page_alloc(pid, (void*)PFTEMP, PTE_P | PTE_W | PTE_U)){
 			memmove(PFTEMP, va, PGSIZE);
 			if(!(sys_page_map(pid, (void*)PFTEMP, pid, va, PTE_P | PTE_W | PTE_U) | 
 					 sys_page_unmap(pid, (void*) PFTEMP)))
@@ -80,7 +79,7 @@ duppage(envid_t envid, unsigned pn)
 
 	// LAB 4: Your code here.
 	//panic("duppage not implemented");
-	if(r != 0) panic("Duplicating page failed\n");
+	if(r != 0) panic("Duplicating page failed: %e\n", r);
 	return 0;
 }
 
@@ -108,13 +107,14 @@ fork(void)
 	extern void _pgfault_upcall(void);
 	set_pgfault_handler(pgfault);
 	envid_t cid = sys_exofork();
-	if(cid < 0) panic("fork failed: %d\n", cid);
+	if(cid < 0) panic("fork failed: %e\n", cid);
 	if(cid == 0){
 		thisenv = &envs[ENVX(sys_getenvid())];
 		return 0;
 	}
-	if(sys_page_alloc(cid, (void*)(UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W) < 0)
-		panic("fork failed\n");
+	int result;
+	if((result = sys_page_alloc(cid, (void*)(UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W)) < 0)
+		panic("fork failed: %e\n", result);
 	
 	uint64_t pml4e, pdpe, pde, pte, base_pml4e, base_pdpe, base_pde, entry;
 	for(pml4e = 0; pml4e < VPML4E(UTOP); pml4e++){

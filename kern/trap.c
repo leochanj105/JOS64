@@ -95,13 +95,13 @@ trap_init(void)
 	int i;
 	char dpl[] = {0, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	for(i = 0; i < 20; i++){
-		SETGATE(idt[i], 1, GD_KT, handlers[i], dpl[i]);
+		SETGATE(idt[i], 0, GD_KT, handlers[i], dpl[i]);
 	}
 	for(; i < 256; i++){
 		SETGATE(idt[i], 0, GD_KT, handlers[21], 0);
 	}
 
-	SETGATE(idt[14], 0, GD_KT, handlers[14], 0);
+	//SETGATE(idt[14], 0, GD_KT, handlers[14], 0);
 	SETGATE(idt[T_NMI], 0, GD_KT, handlers[2], 0);
 	/*
 	SETGATE(idt[T_DIVIDE], 1, GD_KT, vectors[0], 0);
@@ -400,7 +400,7 @@ page_fault_handler(struct Trapframe *tf)
 	// Destroy the environment that caused the fault.
 //user_mem_assert(curenv, fault_va)
 	if(curenv->env_pgfault_upcall) {
-		struct UTrapframe* utf = (struct UTrapframe*)((tf->tf_rsp < UXSTACKTOP && tf->tf_rsp >= (UXSTACKTOP - PGSIZE))? 
+		struct UTrapframe* utf = (struct UTrapframe*)((tf->tf_rsp < UXSTACKTOP && tf->tf_rsp >= (UXSTACKTOP - PGSIZE)) ?  
 															  								   tf->tf_rsp - (8 + UTFSIZE) : UXSTACKTOP - UTFSIZE);
 		user_mem_assert(curenv, (void*)utf, UTFSIZE, PTE_W);
 		utf->utf_fault_va = fault_va;

@@ -305,18 +305,21 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	void* dstva = env->env_ipc_dstva;
 	env->env_ipc_recving = 0;
 	env->env_ipc_perm = 0;
-	env->env_ipc_value = value;
 	if((uintptr_t)srcva < UTOP && (uintptr_t)dstva < UTOP){
-		if(PGOFF(srcva) || PGOFF(dstva) || !(perm & PTE_U) || !(perm & PTE_P) || (perm & ~PTE_SYSCALL)) return -E_INVAL;
+		if(PGOFF(srcva) || PGOFF(dstva) || !(perm & PTE_U) || !(perm & PTE_P) || (perm & ~PTE_SYSCALL))	return -E_INVAL;
 		pte_t* pte;
 		struct PageInfo* page = page_lookup(curenv->env_pml4e, srcva, &pte);
-		if(!page || (!(*pte & PTE_W) && (perm & PTE_W))) return -E_INVAL;
+		if(!page || (!(*pte & PTE_W) && (perm & PTE_W))) {
+			env->env_ipc_recving = 1;
+			return -E_INVAL;
+		}
 		if(page_insert(env->env_pml4e, page, dstva, perm)) return -E_NO_MEM;
 		env->env_ipc_perm = perm;
 	}
+	env->env_ipc_value = value;
 	env->env_ipc_from = curenv->env_id;
-	env->env_status = ENV_RUNNABLE;
 	env->env_tf.tf_regs.reg_rax = 0;
+	env->env_status = ENV_RUNNABLE;
 	return 0;
 }
 

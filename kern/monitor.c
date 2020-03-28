@@ -270,7 +270,7 @@ mon_continue(int argc, char **argv, struct Trapframe *tf){
 	} else{
 		tf->tf_eflags &= ~FL_TF;
 		env_run(curenv);
-		cprintf("Env unsucessfully exited\n");
+		panic("Env unsucessfully exited\n");
 		return -1;
 	}
 }
@@ -283,7 +283,7 @@ mon_si(int argc, char **argv, struct Trapframe *tf){
 		tf->tf_eflags |= FL_TF;
 		cprintf("Step at 0x%016x: %016x\n", tf->tf_rip, *(uint64_t*)(tf->tf_rip));
 		env_run(curenv);
-		cprintf("Env unsucessfully exited\n");
+		panic("Env unsucessfully exited\n");
 		return -1;
 	}
 }

@@ -31,14 +31,11 @@ sched_yield(void)
 
 	// LAB 4: Your code here.
 	// sched_halt never returns
-	idle = curenv ? curenv + 1 : envs;
-	for(; idle < envs + NENV; idle++){
-		if(idle->env_status == ENV_RUNNABLE) env_run(idle);
-	}
-	if(curenv){
-		for(idle = envs; idle < curenv; idle++){
+	for(idle = curenv ? curenv + 1 : envs; idle < envs + NENV; idle++)
 			if(idle->env_status == ENV_RUNNABLE) env_run(idle);
-		}
+	if(curenv){
+		for(idle = envs; idle < curenv; idle++)
+			if(idle->env_status == ENV_RUNNABLE) env_run(idle);
 		if(curenv->env_status == ENV_RUNNING) env_run(curenv);
 	}	
 	sched_halt();

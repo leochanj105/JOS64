@@ -122,23 +122,14 @@ void
 env_init(void)
 {
 	// Set up envs array
-	// LAB 3: Your code here.
 	env_free_list = NULL;
   for(struct Env* e = envs + NENV - 1; e >= envs; e--){
-		e->env_status = ENV_FREE;
+		//cprintf("invoked %d times\n", ++num);
+		//e->env_status = ENV_FREE;
 		e->env_id = 0;
 		e->env_link = env_free_list;
 		env_free_list = e;
 	}
-	//panic("???\n");
-	//asm volatile("int $3");
-	//int n = 0;
-	//for(struct Env *e = env_free_list; e; e = e->env_link){
-	//	cprintf("%016x ", e);
-	//	n++;
-	//	if(n == 10) {n = 0; cprintf("\n");}
-	//}
-	// Per-CPU part of the initialization
 	env_init_percpu();
 	//check_pc();
 }
@@ -237,7 +228,6 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	int32_t generation;
 	int r;
 	struct Env *e;
-  cprintf("free = %016x\n", env_free_list);
 	if (!(e = env_free_list))
 		return -E_NO_FREE_ENV;
 
@@ -417,6 +407,8 @@ void
 env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
+	cprintf("%016x\n", env_free_list);
+	assert(env_free_list);
 	struct Env* new_env;
 	int	err = env_alloc(&new_env, 0);
 	if(err)
