@@ -279,6 +279,9 @@ trap_dispatch(struct Trapframe *tf)
 			tf->tf_regs.reg_rax = syscall(tf->tf_regs.reg_rax, tf->tf_regs.reg_rdx, tf->tf_regs.reg_rcx, tf->tf_regs.reg_rbx, tf->tf_regs.reg_rdi, tf->tf_regs.reg_rsi);
 			return;
 	}
+	// Handle keyboard and serial interrupts.
+	// LAB 5: Your code here.
+
 	// Unexpected trap: The user process or the kernel has a bug.
 	if (tf->tf_cs == GD_KT){
 	//	print_trapframe(tf);
