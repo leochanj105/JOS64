@@ -63,6 +63,7 @@ i386_init(void)
 	// Your code here:
 
 	// Starting non-boot CPUs
+	lock_kernel();
 	boot_aps();
 
 
@@ -77,7 +78,10 @@ i386_init(void)
 #else
 	// Touch all you want.
 
+	//ENV_CREATE(user_spawnhello, ENV_TYPE_USER);
+
 	ENV_CREATE(user_icode, ENV_TYPE_USER);
+	/*ENV_CREATE(user_buggyhello, ENV_TYPE_USER);*/
 #endif // TEST*
 
 	// Should not be necessary - drains keyboard because interrupt has given up.
@@ -138,7 +142,9 @@ mp_main(void)
 	// Your code here:
 
 	// Remove this after you finish Exercise 4
-	for (;;);
+	//for (;;);
+	lock_kernel();
+	sched_yield();
 }
 
 
