@@ -62,6 +62,10 @@ sys_env_destroy(envid_t envid)
 
 	if ((r = envid2env(envid, &e, 1)) < 0)
 		return r;
+ // if (e == curenv)
+//			cprintf("[%08x] exiting gracefully\n", curenv->env_id);
+//	else
+//				cprintf("[%08x] destroying %08x\n", curenv->env_id, e->env_id);
 	env_destroy(e);
 	return 0;
 }
@@ -91,7 +95,10 @@ sys_exofork(void)
 	//cprintf("free=%d\n", free_num());
 	//cprintf("freelist = %016x\n", env_free_list);
 	int result = env_alloc(&child, curenv->env_id);
-	if(result < 0) return result;
+	if(result < 0) {
+//		cprintf("result = %d\n", result);
+		return result;
+	}
 	child->env_status = ENV_NOT_RUNNABLE;
 	child->env_tf = curenv->env_tf;
 	child->env_tf.tf_regs.reg_rax = 0;
@@ -138,7 +145,12 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 	// LAB 5: Your code here.
 	// Remember to check whether the user has supplied us with a good
 	// address!
-	panic("sys_env_set_trapframe not implemented");
+	struct Env* env;
+	int result = envid2env(envid, &env, 1);
+	if(result < 0) return result;
+	env->env_tf = *tf;
+	return 0;
+	//panic("sys_env_set_trapframe not implemented");
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
@@ -235,7 +247,8 @@ sys_page_map(envid_t srcenvid, void *srcva,
 	pte_t *entry;
 	struct PageInfo* page = page_lookup(src->env_pml4e, srcva, &entry);
 	if(!page || ((perm & PTE_W) && !(*entry & PTE_W))) return -E_INVAL;
-	return page_insert(dst->env_pml4e, page, dstva, perm);
+	int r = page_insert(dst->env_pml4e, page, dstva, perm);
+	return r;
 }
 
 // Unmap the page of memory at 'va' in the address space of 'envid'.
@@ -409,6 +422,8 @@ syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, 
 			return sys_ipc_try_send((envid_t)a1, a2, (void*)a3, a4);
 		case SYS_ipc_recv:
 			return sys_ipc_recv((void*)a1);
+		case SYS_env_set_trapframe:
+			return sys_env_set_trapframe((envid_t)a1, (struct Trapframe*)a2);
 	default:
 		return -E_NO_SYS;
 	}

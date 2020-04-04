@@ -46,7 +46,10 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 	int result = -E_IPC_NOT_RECV;
 	if(!pg) pg = (void*)UTOP;
 	while(result != 0){
-		if(result != -E_IPC_NOT_RECV) panic("ipc sending failed with %e\n", result);
+		if(result != -E_IPC_NOT_RECV){
+			//cprintf("to=%016x\n", to_env);
+			panic("ipc sending failed with %e\n", result);
+		}
 		result = sys_ipc_try_send(to_env, val, pg, perm);
 		sys_yield();
 	}

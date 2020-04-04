@@ -29,11 +29,11 @@ set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 	if (_pgfault_handler == 0) {
 		// First time through!
 		// LAB 4: Your code here.
-		envid_t eid = sys_getenvid();
-		if(sys_page_alloc(eid, (void*)(UXSTACKTOP - PGSIZE), PTE_U | PTE_W | PTE_P)) 
+		//envid_t eid = sys_getenvid();
+		if(sys_page_alloc(0, (void*)(UXSTACKTOP - PGSIZE), PTE_U | PTE_W | PTE_P)) 
 			panic("Allocation of space for UXSTACK failed\n");
 		else
-			sys_env_set_pgfault_upcall(eid, _pgfault_upcall);
+			sys_env_set_pgfault_upcall(0, _pgfault_upcall);
 		//panic("set_pgfault_handler not implemented");
 	}
 

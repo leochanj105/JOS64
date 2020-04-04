@@ -67,20 +67,24 @@ duppage(envid_t envid, unsigned pn)
 	pte_t pte = uvpt[pn];
 	int perm = pte & PTE_SYSCALL;
 	void *va = (void*)((uintptr_t)pn * PGSIZE);
-	envid_t pid = sys_getenvid();
+	if(perm & PTE_SHARE){
+		r = sys_page_map(0, va, envid, va, perm);
+		return r;
+	}
+	//envid_t pid = sys_getenvid();
 	if((perm & PTE_W) || (perm & PTE_COW)){
 		perm &= ~PTE_W;
 		perm |= PTE_COW;
-		r = sys_page_map(pid, va, envid, va, perm) | sys_page_map(pid, va, pid, va, perm);
+		r = sys_page_map(0, va, envid, va, perm) | sys_page_map(0, va, 0, va, perm);
 	}
 	else{
-		r = sys_page_map(pid, va, envid, va, perm);
+		r = sys_page_map(0, va, envid, va, perm);
 	}
 
 	// LAB 4: Your code here.
 	//panic("duppage not implemented");
-	if(r != 0) panic("Duplicating page failed: %e\n", r);
-	return 0;
+	//if(r != 0) panic("Duplicating page failed: %e\n", r);
+	return r;
 }
 
 //

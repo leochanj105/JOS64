@@ -486,7 +486,10 @@ page_free(struct PageInfo *pp)
 	// Fill this function in
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
-	if(pp->pp_ref || pp->pp_link) panic("page_free fault");
+	if(!pp) return;
+	if(pp->pp_ref || pp->pp_link){
+		panic("page_free fault");
+	}
 	pp->pp_link = page_free_list;
 	page_free_list = pp;
 }
@@ -536,7 +539,9 @@ pml4e_walk(pml4e_t *pml4e, const void *va, int create)
 	if(allocate){
 		if(!create) return NULL;
 		pml4e_info = page_alloc(ALLOC_ZERO);
+	  //assert(!pml4e_info->pp_link);
 		if(!pml4e_info) return NULL;
+		assert(!pml4e_info->pp_link);
 		pml4e_info->pp_ref++;
 		*entry = (pml4e_t)(page2pa(pml4e_info) | PTE_USER);
 	}
@@ -647,17 +652,17 @@ int
 page_insert(pml4e_t *pml4e, struct PageInfo *pp, void *va, int perm)
 {
 	// Fill this function in
-	//page_remove(pml4e, va);
 	pte_t *pte = pml4e_walk(pml4e, va, 1);
-	//if(pte){	
-	//	page_remove(pml4e, va);		
-	//} else{
-	//	pte = pml4e_walk(pml4e, va, 1);
 	if(!pte) return -E_NO_MEM;
-//	}
-	if((*pte) & PTE_P) page_remove(pml4e, va);
-	*pte = page2pa(pp) | perm | PTE_P;
-	pp -> pp_ref++;
+	if(PTE_ADDR(*pte) == page2pa(pp)){
+		*pte = page2pa(pp) | perm | PTE_P;
+	}
+	else{
+		if((*pte) & PTE_P) page_remove(pml4e, va);
+		*pte = page2pa(pp) | perm | PTE_P;
+		(pp->pp_ref)++;
+	}
+	tlb_invalidate(pml4e, va);
 	return 0;
 }
 
