@@ -1,3 +1,16 @@
 List challenge problems completed as part of the lab 3 handin, as well
 as the problem number.  If you worked any previous lab challenges and
 submitted them with this lab, list them here, along with the lab number.
+
+
+Lab 3 Challenge 1 completed:
+In kern/trapentry.S, we implemented a wrapper macro to generate a list of trap handlers.
+In kern/trap.c, we used loops to set trap / interrupt gates with the list defined in trapentry.S. 
+(Although some gates need to be set explicitly.)
+
+
+Lab 3 Challenge 2 completed:
+In kern/monitor.c, we implemented two commands for debugging:
+	si for single stepping instructions from the break point,
+	continue for continuing until the next breakpoint or completion.
+We implented these functions by setting / clearing the FL_TF.

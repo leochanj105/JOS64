@@ -36,6 +36,8 @@ _pgfault_upcall:
 // Call the C page fault handler.
 // function argument: pointer to UTF
 
+
+
 movq  %rsp,%rdi                // passing the function argument in rdi
 movabs _pgfault_handler, %rax
 call *%rax
@@ -67,18 +69,27 @@ call *%rax
 // ways as registers become unavailable as scratch space.
 //
 // LAB 4: Your code here.
+mov 152(%rsp), %r8
+mov 136(%rsp), %r9
+sub $8, %r8
+mov %r9, (%r8)
+mov %r8, 152(%rsp)
+add $16, %rsp
 
     // Restore the trap-time registers.  After you do this, you
     // can no longer modify any general-purpose registers.
     // LAB 4: Your code here.
-
+POPA_
     // Restore eflags from the stack.  After you do this, you can
     // no longer use arithmetic operations or anything else that
     // modifies eflags.
-    // LAB 4: Your code here.
+		// LAB 4: Your code here.
+add $8, %rsp
+popf
 
     // Switch back to the adjusted trap-time stack.
     // LAB 4: Your code here.
-
+mov (%rsp), %rsp
     // Return to re-execute the instruction that faulted.
     // LAB 4: Your code here.
+ret

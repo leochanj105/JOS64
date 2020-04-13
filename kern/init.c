@@ -70,6 +70,7 @@ i386_init(void)
 	// Your code here:
 
 	// Starting non-boot CPUs
+	lock_kernel();
 	boot_aps();
 
 
@@ -88,6 +89,8 @@ i386_init(void)
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
+
+	//ENV_CREATE(user_spawnhello, ENV_TYPE_USER);
 
 	ENV_CREATE(user_icode, ENV_TYPE_USER);
 #endif // TEST*
@@ -150,7 +153,9 @@ mp_main(void)
 	// Your code here:
 
 	// Remove this after you finish Exercise 4
-	for (;;);
+	//for (;;);
+	lock_kernel();
+	sched_yield();
 }
 
 
