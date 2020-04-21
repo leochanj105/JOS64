@@ -161,4 +161,12 @@ sys_time_msec(void)
 {
 	return (unsigned int) syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
 }
+int 
+sys_send_packet(char* buf, int len){
+	return syscall(SYS_send_packet, 0, (uint64_t)buf, len, 0, 0, 0);
+}
 
+int
+sys_recv_packet(char *buf, int* len){
+	return syscall(SYS_recv_packet, 0, (uint64_t) buf, (uint64_t) len,0,0,0);
+}

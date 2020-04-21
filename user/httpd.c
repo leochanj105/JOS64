@@ -48,7 +48,9 @@ die(char *m)
 static void
 req_free(struct http_request *req)
 {
+	//panic(req->url);
 	free(req->url);
+	//panic("reaches here\n");
 	free(req->version);
 }
 
@@ -77,7 +79,15 @@ static int
 send_data(struct http_request *req, int fd)
 {
 	// LAB 6: Your code here.
-	panic("send_data not implemented");
+	//panic("send_data not implemented");
+	struct Stat st;
+	int r;
+	if((r = fstat(fd, &st)) < 0) panic("Bad file descriptor!\n");
+	int size = st.st_size;
+	char buf[size];
+	if((r = read(fd, buf, size)) < 0) panic("File read failed\n");
+	if(write(req->sock, buf, size) != size) return -1;
+	return 0;
 }
 
 static int
@@ -216,6 +226,7 @@ send_file(struct http_request *req)
 	int r;
 	off_t file_size = -1;
 	int fd;
+  //panic("reaches here\n");
 
 	// open the requested url for reading
 	// if the file does not exist, send a 404 error using send_error
@@ -223,8 +234,20 @@ send_file(struct http_request *req)
 	// set file_size to the size of the file
 
 	// LAB 6: Your code here.
-	panic("send_file not implemented");
-
+	//panic("send_file not implemented");
+	struct Stat st;
+	r = open(req->url, O_RDONLY);
+	if(r < 0){
+		send_error(req, 404);
+		goto end;
+	}
+	fd = r;
+	r = fstat(fd, &st);
+	if(r < 0 || st.st_isdir){
+		send_error(req, 404);
+		goto end;
+	}
+	file_size = st.st_size;
 	if ((r = send_header(req, 200)) < 0)
 		goto end;
 
@@ -236,9 +259,7 @@ send_file(struct http_request *req)
 
 	if ((r = send_header_fin(req)) < 0)
 		goto end;
-
 	r = send_data(req, fd);
-
 end:
 	close(fd);
 	return r;
@@ -271,6 +292,7 @@ handle_client(int sock)
 		else
 			send_file(req);
 
+		//panic("reaches here!\n");
 		req_free(req);
 
 		// no keep alive

@@ -3,7 +3,7 @@
 #include <inc/string.h>
 #include <kern/pci.h>
 #include <kern/pcireg.h>
-
+#include <kern/e1000.h>
 // Flag to do "lspci" at bootup
 static int pci_show_devs = 1;
 static int pci_show_addrs = 0;
@@ -14,7 +14,6 @@ static uint32_t pci_conf1_data_ioport = 0x0cfc;
 
 // Forward declarations
 static int pci_bridge_attach(struct pci_func *pcif);
-
 // PCI driver table
 struct pci_driver {
 	uint32_t key1, key2;
@@ -29,6 +28,7 @@ struct pci_driver pci_attach_class[] = {
 
 // pci_attach_vendor matches the vendor ID and device ID of a PCI device
 struct pci_driver pci_attach_vendor[] = {
+	{0x8086, 0x100e, &pci_attach_e1000},
 	{ 0, 0, 0 },
 };
 

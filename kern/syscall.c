@@ -16,7 +16,7 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/time.h>
-
+#include <kern/e1000.h>
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
 // Destroys the environment on memory errors.
@@ -379,12 +379,21 @@ static int
 sys_time_msec(void)
 {
 	// LAB 6: Your code here.
-	panic("sys_time_msec not implemented");
+	//panic("sys_time_msec not implemented");
+	return time_msec();
 }
 
-
-
-
+static int
+sys_send_packet(char* buf, int len){
+	user_mem_assert(curenv, (const void*)buf, len, PTE_P);
+	return send_packet(buf, len);
+}
+static int
+sys_recv_packet(char* buf, int* len){
+	user_mem_assert(curenv, (const void*) buf, 2048, PTE_P);
+	user_mem_assert(curenv, (const void*) len, 4, PTE_P);
+	return recv_packet(buf, len);
+}
 // Dispatches to the correct kernel function, passing the arguments.
 int64_t
 syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, uint64_t a5)
@@ -433,6 +442,12 @@ syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, 
 			return sys_ipc_recv((void*)a1);
 		case SYS_env_set_trapframe:
 			return sys_env_set_trapframe((envid_t)a1, (struct Trapframe*)a2);
+		case SYS_time_msec:
+			return sys_time_msec();
+		case SYS_send_packet:
+			return sys_send_packet((char*)a1, a2);
+		case SYS_recv_packet:
+			return sys_recv_packet((char*)a1, (int*)a2);
 	default:
 		return -E_NO_SYS;
 	}
