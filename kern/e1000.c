@@ -28,7 +28,7 @@ int pci_attach_e1000(struct pci_func *f){
 	}
 	e1000_bar0[E1000_TDBAL >> 2] = PADDR(bufdesc);
 	e1000_bar0[E1000_TDBAH >> 2] = PADDR(bufdesc) >> 32;
-  e1000_bar0[E1000_TDLEN >> 2] = sizeof(struct tx_desc) * MAXBUF;
+	e1000_bar0[E1000_TDLEN >> 2] = sizeof(struct tx_desc) * MAXBUF;
 	e1000_bar0[E1000_TDH >> 2] = 0x0;
 	e1000_bar0[E1000_TDT >> 2] = 0x0;
 
