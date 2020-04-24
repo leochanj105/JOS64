@@ -150,3 +150,7 @@ sys_ipc_recv(void *dstva)
 	return syscall(SYS_ipc_recv, 1, (uint64_t)dstva, 0, 0, 0, 0);
 }
 
+int 
+sys_change_priority(envid_t id, int p){
+	return syscall(SYS_change_priority, 0, (uint64_t)id, (uint64_t)p, 0, 0, 0);
+}
