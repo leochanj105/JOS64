@@ -77,7 +77,6 @@ sys_yield(void)
 {
 	sched_yield();
 }
-
 // Allocate a new environment.
 // Returns envid of new environment, or < 0 on error.  Errors are:
 //	-E_NO_FREE_ENV if no free environment is available.
@@ -106,7 +105,14 @@ sys_exofork(void)
 	return child->env_id;
 	//panic("sys_exofork not implemented");
 }
-
+static int
+sys_change_priority(envid_t id, int p){
+	struct Env* env;
+	int result = envid2env(id, &env, 1);
+	if(result < 0) return result;
+	env->priority = p;
+	return 0;
+}
 // Set envid's env_status to status, which must be ENV_RUNNABLE
 // or ENV_NOT_RUNNABLE.
 //
@@ -448,6 +454,8 @@ syscall(uint64_t syscallno, uint64_t a1, uint64_t a2, uint64_t a3, uint64_t a4, 
 			return sys_send_packet((char*)a1, a2);
 		case SYS_recv_packet:
 			return sys_recv_packet((char*)a1, (int*)a2);
+		case SYS_change_priority:
+			return sys_change_priority((envid_t)a1, a2);
 	default:
 		return -E_NO_SYS;
 	}

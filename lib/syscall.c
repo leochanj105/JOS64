@@ -170,3 +170,7 @@ int
 sys_recv_packet(char *buf, int* len){
 	return syscall(SYS_recv_packet, 0, (uint64_t) buf, (uint64_t) len,0,0,0);
 }
+int 
+sys_change_priority(envid_t id, int p){
+	return syscall(SYS_change_priority, 0, (uint64_t)id, (uint64_t)p, 0, 0, 0);
+}

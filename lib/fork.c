@@ -108,14 +108,18 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
+	static int loc = 1;
 	extern void _pgfault_upcall(void);
 	set_pgfault_handler(pgfault);
 	envid_t cid = sys_exofork();
+	int p = thisenv->priority;
 	if(cid < 0) panic("fork failed: %e\n", cid);
 	if(cid == 0){
 		thisenv = &envs[ENVX(sys_getenvid())];
 		return 0;
 	}
+	sys_change_priority(cid, p);
+
 	int result;
 	if((result = sys_page_alloc(cid, (void*)(UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W)) < 0)
 		panic("fork failed: %e\n", result);

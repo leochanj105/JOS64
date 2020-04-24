@@ -1,3 +1,13 @@
 List challenge problems completed as part of the lab 4 handin, as well
 as the problem number.  If you worked any previous lab challenges and
 submitted them with this lab, list them here, along with the lab number.
+
+
+Lab4 Challenge 2 completed:
+In kern/sched.c, I added a priority scheduling policy, which pick the env with highest priority. 
+To choose a specific scheduling policy, change the PRIORITY macro at the top of the file.
+Note that this pure priority scheduing may be conflicting with some tasks such as primes.c since
+deadlock might occur.
+Also in lib/fork.c, I allow each child env to extend the priority of its parent. 
+A new system call is also added to change the priority of an env:
+sys_change_priority(envid_t id, int priority).
