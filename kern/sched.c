@@ -4,7 +4,7 @@
 #include <kern/env.h>
 #include <kern/pmap.h>
 #include <kern/monitor.h>
-#define PRIORITY 0
+#define PRIORITY 1
 void sched_halt(void);
 
 
@@ -35,16 +35,29 @@ sched_yield(void)
 #if PRIORITY
 	struct Env* maxp;
 	maxp = 0;
-	for(idle = envs; idle < envs + NENV; idle++){
+	for(idle = curenv ? curenv + 1:envs; idle < envs + NENV; idle++){
 			if(idle->env_status == ENV_RUNNABLE){
 				if(!maxp || maxp->priority < idle->priority) maxp = idle;
 			}
 	}
-	if(!maxp){
-		if(curenv && curenv->env_status == ENV_RUNNING) env_run(curenv);
-	}
+	if(curenv){
+		for(idle = envs; idle < curenv; idle++){
+			if(idle->env_status == ENV_RUNNABLE){
+				if(!maxp || maxp->priority < idle->priority) maxp = idle;
+			}
+		}
+		if(curenv->env_status == ENV_RUNNING){
+			if(maxp && maxp->priority >= curenv->priority) {
+				env_run(maxp);
+			}
+			env_run(curenv);
+		}
+		else{
+			if(maxp) env_run(maxp);
+		}
+	} 
 	else{
-		env_run(maxp);
+		if(maxp) env_run(maxp);
 	}
 #else
 	for(idle = curenv ? curenv + 1 : envs; idle < envs + NENV; idle++)

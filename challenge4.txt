@@ -6,8 +6,7 @@ submitted them with this lab, list them here, along with the lab number.
 Lab4 Challenge 2 completed:
 In kern/sched.c, I added a priority scheduling policy, which pick the env with highest priority. 
 To choose a specific scheduling policy, change the PRIORITY macro at the top of the file.
-Note that this pure priority scheduing may be conflicting with some tasks such as primes.c since
-deadlock might occur.
-Also in lib/fork.c, I allow each child env to extend the priority of its parent. 
+Note that this pure priority scheduing may be very slow compare to round-robin when there are many envs, since it has to iterate through the whole env list.
+Also in lib/fork.c, I allow each child env to extend its parent's priority.
 A new system call is also added to change the priority of an env:
 sys_change_priority(envid_t id, int priority).

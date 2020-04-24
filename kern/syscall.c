@@ -111,6 +111,7 @@ sys_change_priority(envid_t id, int p){
 	int result = envid2env(id, &env, 1);
 	if(result < 0) return result;
 	env->priority = p;
+	//cprintf("sys : env %d: %d\n", env->env_id, env->priority);
 	return 0;
 }
 // Set envid's env_status to status, which must be ENV_RUNNABLE

@@ -118,7 +118,7 @@ fork(void)
 		thisenv = &envs[ENVX(sys_getenvid())];
 		return 0;
 	}
-	sys_change_priority(cid, p);
+	sys_change_priority(cid, p);              //Priority extension
 
 	int result;
 	if((result = sys_page_alloc(cid, (void*)(UXSTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W)) < 0)
