@@ -10,3 +10,6 @@ Note that this pure priority scheduing may be very slow compare to round-robin w
 Also in lib/fork.c, I allow each child env to extend its parent's priority.
 A new system call is also added to change the priority of an env:
 sys_change_priority(envid_t id, int priority).
+
+To view an example, I've changed user/hello.c to an example of priority scheduling.
+Try make run-hello-nox to see the example.
